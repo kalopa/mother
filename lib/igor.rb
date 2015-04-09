@@ -33,7 +33,7 @@
 #
 require 'redis_base'
 
-module Smacht
+module SGS
   class Igor < RedisBase
     attr_accessor :time, :bvolts, :bcurrent, :btemp, :svolts
 

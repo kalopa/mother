@@ -4,5 +4,5 @@ $: << '.'
 
 require 'gps'
 
-x = Smacht::GPS.load
+x = SGS::GPS.load
 p x

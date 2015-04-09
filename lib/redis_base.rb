@@ -30,7 +30,7 @@
 #
 require 'redis'
 
-module Smacht
+module SGS
   class RedisBase
     ##
     # The base (inherited) class for dealing with Redis data for

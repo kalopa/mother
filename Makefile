@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 #
 # Copyright (c) 2013, Kalopa Research.  All rights reserved.  This is free
 # software; you can redistribute it and/or modify it under the terms of the
@@ -25,23 +24,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-$: << '.'
-
-require 'alarm.rb'
-require 'gps.rb'
-require 'igor.rb'
-#require 'mission.rb'
-require 'otto.rb'
-require 'timing.rb'
-require 'waypoint.rb'
-
-##
-# Initialise the REDIS system.
 #
-SGS::Alarm.setup
-SGS::GPS.setup
-SGS::Igor.setup
-#SGS::Mission.setup
-SGS::Otto.setup
-SGS::Timing.setup
-SGS::Waypoint.setup
+BOAT=beogabeag
+
+all:
+
+deploy:
+	rsync -avz lib bin root@$(BOAT):/app/mother

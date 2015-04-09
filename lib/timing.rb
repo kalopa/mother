@@ -33,7 +33,7 @@
 #
 require 'redis_base'
 
-module Smacht
+module SGS
   class Timing < RedisBase
     attr_accessor :status, :boot, :briefing, :m_start, :m_abort, :m_complete
 

@@ -34,7 +34,7 @@
 
 require 'date'
 
-module Smacht
+module SGS
   ##
   #
   # A class to handle boat polar calculations. It takes a range of polars

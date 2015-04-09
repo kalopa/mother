@@ -29,7 +29,7 @@
 #
 require 'redis_base'
 
-module Smacht
+module SGS
   class Nav < RedisBase
     attr_accessor :mode, :rudder, :sail, :compass, :twa
 

@@ -34,7 +34,7 @@
 
 require 'date'
 
-module Smacht
+module SGS
   ##
   #
   # Class for dealing with latitude/longitude. Includes methods for parsing,

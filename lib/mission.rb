@@ -34,7 +34,7 @@
 
 require 'date'
 
-module Smacht
+module SGS
   #
   # Handle a specific mission.
   class Mission

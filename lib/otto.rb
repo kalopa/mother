@@ -33,7 +33,7 @@
 #
 require 'redis_base'
 
-module Smacht
+module SGS
   class Otto < RedisBase
     attr_accessor :rudder, :sail, :twa, :compass, :pitch, :heel
 

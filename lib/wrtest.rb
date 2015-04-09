@@ -5,7 +5,7 @@ $: << '.'
 require 'gps'
 
 loop do
-  x = Smacht::GPS.new
+  x = SGS::GPS.new
   x.time = Time.now
   x.location.latitude_degrees = 53.26066666
   x.location.longitude_degrees = -9.03083333

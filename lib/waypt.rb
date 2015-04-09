@@ -34,7 +34,7 @@
 
 require 'date'
 
-module Smacht
+module SGS
   #
   # Waypoint, Attractor, and Repellor definitions
   class Waypoint

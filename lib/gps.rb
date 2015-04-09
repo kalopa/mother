@@ -4,7 +4,7 @@
 require 'redis_base'
 require 'location'
 
-module Smacht
+module SGS
   class GPS < RedisBase
     attr_accessor :time, :location, :sog, :cmg, :magvar, :count, :valid
 

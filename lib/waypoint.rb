@@ -33,7 +33,7 @@
 #
 require 'redis_base'
 
-module Smacht
+module SGS
   class Waypoint < RedisBase
     attr_accessor :next, :latitude, :longitude, :eta
 
