@@ -1,0 +1,78 @@
+gps.latitude		Float		Latitude from GPS
+gps.longitude		Float		Longitude from GPS
+gps.update		Time		Date/time of last lat/long
+gps.sog			Float		SOG from the GPS
+gps.cog			Float		COG from the GPS
+gps.count		Integer		GPS update count
+
+mission.file		String		Mission filename
+mission.mode		Integer		Mission modestate flag
+
+waypoint.next		Integer		Next waypoint number
+waypoint.latitude	Float		Next waypoint lat/long
+waypoint.longitude	Float		Distance to waypoint
+waypoint.bearing	Float		Bearing to waypoint
+waypoint.eta		Time		Predicted ETA to waypoint
+waypoint.count		Integer		Waypoint update count
+
+timing.status		Time		Date/time of last status report
+timing.boot		Time		Date/time of last boot
+timing.briefing		Time		Date/time of mission briefing
+timing.m_start		Time		Date/time of mission start
+timing.m_abort		Time		Date/time of mission abort
+timing.m_complete	Time		Date/time of mission completion
+
+alarm.count		Integer		Alarm count
+alarm.time1		Time		Alarm #1 date/time (NULL if never alarmed)
+alarm.time2		Time		Alarm #2 date/time (NULL if never alarmed)
+alarm.time3		Time		Alarm #3 date/time (NULL if never alarmed)
+alarm.time4		Time		Alarm #4 date/time (NULL if never alarmed)
+alarm.time5		Time		Alarm #5 date/time (NULL if never alarmed)
+alarm.time6		Time		Alarm #6 date/time (NULL if never alarmed)
+alarm.time7		Time		Alarm #7 date/time (NULL if never alarmed)
+alarm.time8		Time		Alarm #8 date/time (NULL if never alarmed)
+alarm.time9		Time		Alarm #9 date/time (NULL if never alarmed)
+alarm.time10		Time		Alarm #10 date/time (NULL if never alarmed)
+alarm.time11		Time		Alarm #11 date/time (NULL if never alarmed)
+alarm.time12		Time		Alarm #12 date/time (NULL if never alarmed)
+alarm.time13		Time		Alarm #13 date/time (NULL if never alarmed)
+alarm.time14		Time		Alarm #14 date/time (NULL if never alarmed)
+alarm.time15		Time		Alarm #15 date/time (NULL if never alarmed)
+alarm.time16		Time		Alarm #16 date/time (NULL if never alarmed)
+alarm.time17		Time		Alarm #17 date/time (NULL if never alarmed)
+alarm.time18		Time		Alarm #18 date/time (NULL if never alarmed)
+alarm.time19		Time		Alarm #19 date/time (NULL if never alarmed)
+alarm.time20		Time		Alarm #20 date/time (NULL if never alarmed)
+alarm.time21		Time		Alarm #21 date/time (NULL if never alarmed)
+alarm.time22		Time		Alarm #22 date/time (NULL if never alarmed)
+alarm.time23		Time		Alarm #23 date/time (NULL if never alarmed)
+alarm.time24		Time		Alarm #24 date/time (NULL if never alarmed)
+alarm.time25		Time		Alarm #25 date/time (NULL if never alarmed)
+alarm.time26		Time		Alarm #26 date/time (NULL if never alarmed)
+alarm.time27		Time		Alarm #27 date/time (NULL if never alarmed)
+alarm.time28		Time		Alarm #28 date/time (NULL if never alarmed)
+alarm.time29		Time		Alarm #29 date/time (NULL if never alarmed)
+alarm.time30		Time		Alarm #30 date/time (NULL if never alarmed)
+alarm.time31		Time		Alarm #31 date/time (NULL if never alarmed)
+alarm.time32		Time		Alarm #32 date/time (NULL if never alarmed)
+
+otto.rudder		Integer		Actual rudder position
+otto.sail		Integer		Actual sail position
+otto.twa		Integer		TWA value
+otto.count		Integer		Otto update count
+otto.compass		Integer		Compass heading
+otto.pitch		Integer		Boat pitch angle
+otto.heel		Integer		Boat heel angle
+
+igor.bvolts		Float		Battery voltage
+igor.bcurrent		Float		Battery current
+igor.btemp		Float		Battery temperature
+igor.svolts		Float		Solar voltage
+igor.count		Float		Igor update count
+
+nav.mode		Integer		Navigation/steering mode
+nav.rudder		Integer		Required rudder position
+nav.sail		Integer		Required sail position
+nav.compass		Integer		Required compass heading
+nav.twa			Integer		Required TWA
+nav.count		Integer		Navigation update count
