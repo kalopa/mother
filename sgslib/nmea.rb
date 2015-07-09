@@ -31,7 +31,7 @@
 # The code on this page was derived from formulae on the Movable Type site:
 # http://www.movable-type.co.uk/scripts/latlong.html
 #
-module Smacht
+module SGS
   class NMEA
     ##
     # Parse and create NMEA strings for various purposes.

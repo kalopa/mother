@@ -33,15 +33,16 @@
 #
 require 'redis_base'
 
-module Smacht
-  class Waypoint < RedisBase
-    attr_accessor :next, :latitude, :longitude, :eta
+module SGS
+  class Igor < RedisBase
+    attr_accessor :time, :bvolts, :bcurrent, :btemp, :svolts
 
     def initialize
-      @next = 0
-      @latitude = 0.0
-      @longitude = 0.0
-      @eta = Time.at(0)
+      @time = Time.at(0)
+      @bvolts = 0.0
+      @bcurrent = 0.0
+      @btemp = 0.0
+      @svolts = 0.0
       super
     end
   end

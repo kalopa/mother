@@ -30,13 +30,18 @@
 #
 require 'redis'
 
-module Smacht
+module SGS
   class RedisBase
     ##
     # The base (inherited) class for dealing with Redis data for
     # the navigation system. Each model class inherits this parent,
     # and gets an update count for free.
-    attr_accessor :count
+
+    #
+    # Initialize the base class.
+    def initialize
+      $redis = Redis.new unless $redis
+    end
 
     #
     # Initialize the (sub-)class variables in Redis.
@@ -59,18 +64,24 @@ module Smacht
     end
 
     #
+    # Convert the class name into something suitable for Redis
+    def self.redis_handle
+      self.name.downcase.gsub(/^sgs::/, '')
+    end
+
+
+    #
     # Translate an instance variable into a Redis key name.
     # This is simply the class name, a dot and the instance
     # variable. A bit of jiggery-pokery to convert the
     # instance variable into a proper name. Probably an easier
     # way to do this, but...
     def self.make_redis_name(var, idx = nil, var_name = nil)
-      prefix = self.name.downcase.gsub(/^smacht::/, '')
       var_name ||= var.to_s.gsub(/^@/, '')
       if idx
-        "#{prefix}.#{var_name}#{idx + 1}"
+        "#{redis_handle}.#{var_name}#{idx + 1}"
       else
-        "#{prefix}.#{var_name}"
+        "#{redis_handle}.#{var_name}"
       end
     end
 
@@ -94,6 +105,12 @@ module Smacht
             lval[idx] = from_redis var, idx_val.class, idx
           end
         elsif lval.kind_of? Location
+          #
+          # ::FIXME:: Yes. this is a hack.
+          # This belongs in the Location class itself. It's arguable that a lot
+          # of the stuff belongs in the parent class. Perhaps the thing to do
+          # is ask the class to return a hash of names and values, and then
+          # set them accordingly.
           lval.latitude = from_redis var, Float, nil, 'latitude'
           lval.longitude = from_redis var, Float, nil, 'longitude'
         else
@@ -105,12 +122,92 @@ module Smacht
     end
 
     #
+    # Write the instance to Redis. IWe produce a Hash of keys and values. From
+    # this and inside a Redis "multi" block, we set all the values and finally
+    # increment the count. @count is actually an instance variable of redis_base
+    def save
+      #
+      # Get the Hash of settable values (including count).
+      var_list = {}
+      self.instance_variables.each do |var|
+        lval = self.instance_variable_get var
+        if lval.kind_of? Array
+          lval.size.times do |idx|
+            var_list[self.class.make_redis_name(var, idx)] = self.class.to_redis var, lval, idx
+          end
+        elsif lval.kind_of? Location
+          #
+          # ::FIXME:: Yes. this is a hack. see 'load' above.
+          var_list[self.class.make_redis_name(var, nil, 'latitude')] = lval.latitude
+          var_list[self.class.make_redis_name(var, nil, 'longitude')] = lval.longitude
+        else
+          var_list[self.class.make_redis_name(var)] = self.class.to_redis var, lval
+        end
+      end
+      #
+      # Inside a multi-block, set all the variables and increment
+      # the count.
+      $redis.multi do
+        var_list.each do |key, value|
+          $redis.set key, value
+        end
+        $redis.incr count_name
+      end
+    end
+
+    #
+    # Publish the count onto a Redis pub/sub channel. The trick to subscribing
+    # to a channel is that whenever there's a publish, the new count is
+    # published as a string. If you subscribe to the channel (usually the
+    # class name), you can remember the last received count and decide if
+    # there is fresh data. Or, you can just act anyway.
+    def publish
+      $redis.publish self.class.redis_handle, count.to_s
+    end
+
+    #
+    # Subscribe to messages from this particular channel. Each count is sent
+    # to the code block. It's up to the called code block to decide if the
+    # count has changed and if so, to read the data from Redis.
+    def self.subscribe
+      redis = Redis.new
+      redis.subscribe(redis_handle) do |on|
+        on.message do |channel, count|
+          yield count.to_i
+        end
+      end
+    end
+
+    #
+    # Combined save and publish
+    def save_and_publish
+      save && publish
+    end
+
+    #
+    # Retrieve the count
+    def count
+      $redis.get count_name
+    end
+
+    #
+    # What is the official name of the count instance variable
+    def count_name
+      self.class.make_redis_name "@count"
+    end
+
+    #
     # Get an instance variable value from a Redis value.
     def self.from_redis(var, klass, idx = nil, var_name = nil)
       redis_name = make_redis_name var, idx, var_name
       redis_val = $redis.get redis_name
       redis_val = nil if redis_val == ""
       if redis_val
+        if not klass or klass == NilClass
+          redis_val = true if redis_val == "true"
+          redis_val = false if redis_val == "false"
+          klass = Float if redis_val =~ /[0-9+-\.]+/
+        end
         case
         when klass == Time
           redis_val = Time.at(redis_val.to_f).gmtime
@@ -118,6 +215,10 @@ module Smacht
           redis_val = redis_val.to_i
         when klass == Float
           redis_val = redis_val.to_f
+        when klass == FalseClass
+          redis_val = false
+        when klass == TrueClass
+          redis_val = true
         end
       end
       redis_val
@@ -135,54 +236,6 @@ module Smacht
         end
       end
       local_val
-    end
-
-    #
-    # Initialize the base class.
-    def initialize
-      @count = 0
-
-      $redis = Redis.new unless $redis
-    end
-
-    #
-    # Write the instance to Redis. In order to auto-increment
-    # the count, we produce a Hash of keys and values. From this,
-    # we then remove the count. Finally, inside a Redis "multi"
-    # block, we set all the values and finally increment the count.
-    def save
-      #
-      # Get the Hash of settable values (including count).
-      var_list = {}
-      self.instance_variables.each do |var|
-        lval = self.instance_variable_get var
-        if lval.kind_of? Array
-          lval.size.times do |idx|
-            var_list[self.class.make_redis_name(var, idx)] = self.class.to_redis var, lval, idx
-          end
-        elsif lval.kind_of? Location
-          var_list[self.class.make_redis_name(var, nil, 'latitude')] = lval.latitude
-          var_list[self.class.make_redis_name(var, nil, 'longitude')] = lval.longitude
-        else
-          var_list[self.class.make_redis_name(var)] = self.class.to_redis var, lval
-        end
-      end
-      #
-      # Remove the count (it is incremented, not set).
-      count_name = self.class.make_redis_name "@count"
-      var_list.delete count_name
-      #
-      # Inside a multi-block, set all the variables and increment
-      # the count.
-      $redis.multi do
-        var_list.each do |key, value|
-          $redis.set key, value
-        end
-        $redis.incr count_name
-      end
-      #
-      # Finally, collect the new count setting.
-      @count = $redis.get count_name
     end
   end
 end

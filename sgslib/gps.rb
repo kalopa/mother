@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 #
 # Copyright (c) 2013, Kalopa Research.  All rights reserved.  This is free
 # software; you can redistribute it and/or modify it under the terms of the
@@ -25,23 +24,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-$: << '.'
+require 'redis_base'
+require 'location'
 
-require 'alarm.rb'
-require 'gps.rb'
-require 'igor.rb'
-#require 'mission.rb'
-require 'otto.rb'
-require 'timing.rb'
-require 'waypoint.rb'
+module SGS
+  class GPS < RedisBase
+    attr_accessor :time, :location, :sog, :cmg, :magvar
 
-##
-# Initialise the REDIS system.
-#
-Smacht::Alarm.setup
-Smacht::GPS.setup
-Smacht::Igor.setup
-#Smacht::Mission.setup
-Smacht::Otto.setup
-Smacht::Timing.setup
-Smacht::Waypoint.setup
+    def initialize(lat = nil, long = nil)
+      @time = Time.new(2000, 1, 1)
+      @location = Location.new(lat, long)
+      @sog = 0.0
+      @cmg = 0.0
+      @magvar = nil
+      @valid = false
+      super()
+    end
+
+    #
+    # Set the validity
+    def is_valid
+      @valid = true
+    end
+
+    #
+    # Is the GPS data valid?
+    def valid?
+      @valid == true
+    end
+  end
+end

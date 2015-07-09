@@ -31,7 +31,7 @@
 #
 require 'redis_base'
 
-module Smacht
+module SGS
   ##
   # Deal with command subsystem.
   #

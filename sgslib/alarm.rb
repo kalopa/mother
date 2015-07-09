@@ -32,7 +32,7 @@
 require 'redis_base'
 require 'date'
 
-module Smacht
+module SGS
   ##
   # Deal with alarm subsystem.
   #

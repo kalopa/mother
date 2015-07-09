@@ -31,10 +31,10 @@
 # The code on this page was derived from formulae on the Movable Type site:
 # http://www.movable-type.co.uk/scripts/latlong.html
 #
-
 require 'date'
+require 'json'
 
-module Smacht
+module SGS
   ##
   #
   # Class for dealing with latitude/longitude. Includes methods for parsing,
@@ -53,9 +53,9 @@ module Smacht
 
     #
     # Create the Location instance.
-    def initialize(lat = 0.0, long = 0.0)
-      @latitude = lat.to_f
-      @longitude = long.to_f
+    def initialize(lat = nil, long = nil)
+      @latitude = lat.to_f if lat
+      @longitude = long.to_f if long
     end
 
     #
@@ -114,9 +114,19 @@ module Smacht
     end
 
     #
+    # Is this location valid?
+    def valid?
+      @latitude and @longitude
+    end
+
+    #
     # Display the lat/long as a useful string (in degrees).
     def to_s
-      "%s, %s" % [ll_to_s(@latitude, "NS"), ll_to_s(@longitude, "EW")]
+      if valid?
+        "%s, %s" % [ll_to_s(@latitude, "NS"), ll_to_s(@longitude, "EW")]
+      else
+        "unknown"
+      end
     end
 
     #

@@ -33,17 +33,17 @@
 #
 require 'redis_base'
 
-module Smacht
-  class Otto < RedisBase
-    attr_accessor :rudder, :sail, :twa, :compass, :pitch, :heel
+module SGS
+  class Timing < RedisBase
+    attr_accessor :status, :boot, :briefing, :m_start, :m_abort, :m_complete
 
     def initialize
-      @rudder = 0
-      @sail = 0
-      @twa = 0
-      @compass = 0
-      @pitch = 0
-      @heel = 0
+      @status = nil
+      @boot = Time.at(0)
+      @briefing = nil
+      @m_start = nil
+      @m_abort = nil
+      @m_complete = nil
       super
     end
   end

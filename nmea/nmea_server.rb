@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 #
 # Copyright (c) 2013, Kalopa Research.  All rights reserved.  This is free
 # software; you can redistribute it and/or modify it under the terms of the
@@ -24,27 +25,48 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
+$: << '../sgslib'
 
-##
-# Routines for handling sailboat navigation and route planning.
-#
-# The code on this page was derived from formulae on the Movable Type site:
-# http://www.movable-type.co.uk/scripts/latlong.html
-#
-require 'redis_base'
+require 'socket'
+require 'daemons'
+require 'nmea'
+require 'gps'
 
-module Smacht
-  class Timing < RedisBase
-    attr_accessor :status, :boot, :briefing, :m_start, :m_abort, :m_complete
+client_list = []
 
-    def initialize
-      @status = nil
-      @boot = Time.at(0)
-      @briefing = nil
-      @m_start = nil
-      @m_abort = nil
-      @m_complete = nil
-      super
+Daemons.run_proc('nmea_server') do
+  #
+  # Fire up the GPS post thread
+  gps_thread = Thread.new do
+    old_count = 0
+    SGS::GPS.subscribe do |count|
+      if count > old_count
+        old_count = count
+        gps = SGS::GPS.load
+        nmea = SGS::NMEA.new
+        nmea.make_gprmc(gps)
+        client_list.each do |client|
+          begin
+            client.puts nmea
+          rescue Errno::EPIPE
+            client_list.delete client
+          end
+        end
+      end
     end
   end
+  gps_thread.abort_on_exception = true
+  #
+  # Now start listening for clients
+  server_thread = Thread.new do
+    server = TCPServer.new 5000
+    loop do
+      client = server.accept
+      client_list << client
+    end
+  end
+  #
+  # Now wait for exceptions.
+  server_thread.join
+  gps_thread.join
 end
