@@ -58,11 +58,11 @@ module SGS
     # Parse an NMEA string into its component parts.
     def parse(str)
       str.chomp!
-      if str[0] != "$"
+      if str[0] != 36
         return -1
       end
       str, sum = str[1..-1].split('*')
-      if sum.to_i(16) != compute_csum(str)
+      if sum.nil? or sum.to_i(16) != compute_csum(str)
         return -1
       end
       @args = str.split(',')
@@ -82,7 +82,7 @@ module SGS
       if @args.count < 12 or @args.count > 13
         return nil
       end
-      gps = GPS.new
+      gps = SGS::GPS.new
       gps.valid = @args[2] == "A"
       hh = @args[1][0..1].to_i
       mm = @args[1][2..3].to_i
