@@ -31,7 +31,12 @@
 #
 require 'sgslib'
 
+otto = SGS::RPCClient.new(:otto)
 loop do
-  sleep 300
+  # Check for any outstanding alarms...
+  puts "Check for any alarms."
+  resp = otto.command "A?"
+  puts "Response: #{resp}"
+  sleep 30
 end
 exit 0

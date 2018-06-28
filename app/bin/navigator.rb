@@ -33,7 +33,9 @@
 #
 require 'sgslib'
 
-loop do
-  sleep 300
+SGS::GPS.subscribe do |count|
+  puts "Received new count: #{count}"
+  gps = SGS::GPS.load
+  p gps
 end
 exit 0

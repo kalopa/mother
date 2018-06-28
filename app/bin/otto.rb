@@ -33,59 +33,79 @@
 # for various state updates, as well.
 #
 require 'serialport'
+require 'msgpack'
 require 'sgslib'
 
-config = SGS::Config.load
-
-sp = SerialPort.new config.otto_device, config.otto_speed
-
-#
-# First off, get the device into comms mode. This is done by sending CQ
-# messages until Otto responds appropriately.
-initted = false
-sp.read_timeout = 2000
-while not initted do
-  begin
-    puts "Send CQ...\n"
-    sp.write "__CQ!\n"
-    puts "Receive response...\n"
-    response = sp.readline.chomp
-    puts "Received: #{response}"
-    if response =~ /^__OK!$/
-      initted = true
-      break
-    end
-    sleep 5
-  rescue EOFError => error
-    puts "Timed out!"
-    sleep 5
-    retry
+class Otto
+  #
+  # Set up the serial port
+  def initialize
+    @config = SGS::Config.load
+    @sp = SerialPort.new @config.otto_device, @config.otto_speed
+    set_timeout
   end
-  puts "Wait...\n"
-  sleep 5
+
+  #
+  # Set the serial port timeout for reads.
+  def set_timeout(val = 2000)
+    @sp.read_timeout = val
+  end
+
+  #
+  # Synchronize with the low-level code. Because the system console
+  # will spew a lot of crap during startup, Otto will ignore all
+  # serial I/O until it sees a CQ sequence.
+  def synchronize
+    initted = false
+    while not initted do
+      resp = command "__CQ!"
+      if resp =~ /^\+CQOK/ or resp =~ /^\+OK/
+        initted = true
+        break
+      end
+      sleep 5
+    end
+  end
+
+  #
+  # Send a command to Otto and wait for a response.
+  def command(str)
+    puts "> Sending command: #{str}"
+    @sp.write "#{str}\n"
+    begin
+      response = @sp.readline.chomp
+    rescue EOFError => error
+      puts "Command timed out."
+      response = "-TMO"
+    end
+    puts "< Response: #{response}"
+    response
+  end
 end
+
+otto = Otto.new
+puts "Synchronize with the low-level board."
+otto.synchronize
+puts "Starting OTTO service..."
 
 #
 # Now listen for Redis PUB/SUB requests and act on each one.
-puts "Starting OTTO service...\n"
-sp.read_timeout = 30000
-begin
-  SGS::RedisBase.redis.subscribe(:otto) do |on|
-    on.subscribe do |channel, subscriptions|
-      puts "Subscribed to ##{channel} (#{subscriptions} subscriptions)"
-    end
+otto.set_timeout 30000
+while true
+  channel, request = SGS::RedisBase.redis.brpop("otto")
+  request = MessagePack.unpack(request)
+  id = request['id']
 
-    on.message do |channel, message|
-      puts "##{channel}: #{message}"
-    end
+  args = request['params'].unshift(request['method'])
+  result = otto.send *args
 
-    on.unsubscribe do |channel, subscriptions|
-      puts "Unsubscribed from ##{channel} (#{subscriptions} subscriptions)"
-    end
-  end
-rescue Redis::BaseConnectionError => error
-  puts "#{error}, retrying in 1s"
-  sleep 1
-  retry
+  reply = {
+    'id' => id,
+    'jsonrpc' => '2.0',
+    'result' => result
+  }
+
+  SGS::RedisBase.redis.rpush(id, MessagePack.pack(reply))
+  SGS::RedisBase.redis.expire(id, 30)
 end
 exit 0

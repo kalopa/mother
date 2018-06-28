@@ -50,6 +50,9 @@ chown redis:redis /app/redis
 /etc/local/rc.d/redis restart
 redis-cli -i 1 info | grep -e ^redis -e uptime
 
+# Do the initial configuration of the Redis data
+ruby -r sgslib -e SGS::Config.configure_all
+
 # Install the god-particles.
 cp /app/mother/god.conf /etc
 cp /app/mother/god.conf /cfg
