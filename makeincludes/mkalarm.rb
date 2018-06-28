@@ -25,8 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-$: << '../sgslib'
-require 'alarm'
+require 'sgslib'
 
 alarm = SGS::Alarm.new
 
@@ -35,11 +34,9 @@ File.open("alarms.h", "w") do |f|
   SGS::Alarm.constants.sort.each do |c|
     unless c == :MESSAGES
       cval = SGS::Alarm.const_get(c)
-      str = "#define #{c.to_s}\t"
-      if c.to_s.length < 15
-        str += "\t"
-      end
-      str += "#{cval}\t/* #{alarm.name(cval)} */"
+      str = "#define SGS_ALARM_#{c.to_s}"
+      str += "\t" if str.length < 32
+      str += "\t#{cval}\t/* #{alarm.name(cval)} */"
       f.puts str
     end
   end
