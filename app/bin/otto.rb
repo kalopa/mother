@@ -26,38 +26,66 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # ABSTRACT
-# This utility function will read from the GPS device one time, and set
-# the system clock accordingly. It is used on the PC Engines WRAP, ALIX
-# and APU boards because they don't have a real-time clock. It is called
-# once during system boot, to attempt to read GPS data, parse it, extract
-# the time, and set the system time. It gives up after thirty seconds.
+# This utility daemon handles all communication between the low-level
+# Atmel board ("Otto Von Helm") and the upper-level systems. Any component
+# which needs to interact with the low-level hardware does so using this
+# daemon. Alarms are also processed herein. It will periodically check
+# for various state updates, as well.
 #
-require 'timeout'
 require 'serialport'
 require 'sgslib'
 
-device = "/dev/ttyU0"
-speed = 9600
+config = SGS::Config.load
 
-if ARGV.count > 0
-  device = ARGV[0]
-  if ARGV.count > 1
-    speed = ARGV[1].to_i
+sp = SerialPort.new config.otto_device, config.otto_speed
+
+#
+# First off, get the device into comms mode. This is done by sending CQ
+# messages until Otto responds appropriately.
+initted = false
+sp.read_timeout = 2000
+while not initted do
+  begin
+    puts "Send CQ...\n"
+    sp.write "__CQ!\n"
+    puts "Receive response...\n"
+    response = sp.readline.chomp
+    puts "Received: #{response}"
+    if response =~ /^__OK!$/
+      initted = true
+      break
+    end
+    sleep 5
+  rescue EOFError => error
+    puts "Timed out!"
+    sleep 5
+    retry
   end
+  puts "Wait...\n"
+  sleep 5
 end
 
-serial = SerialPort.new device, serial
+#
+# Now listen for Redis PUB/SUB requests and act on each one.
+puts "Starting OTTO service...\n"
+sp.read_timeout = 30000
+begin
+  SGS::RedisBase.redis.subscribe(:otto) do |on|
+    on.subscribe do |channel, subscriptions|
+      puts "Subscribed to ##{channel} (#{subscriptions} subscriptions)"
+    end
 
-gps = nil
-status = Timeout::timeout(30) do
-  while true do
-    nmea = SGS::NMEA.parse(serial.readline)
-    if nmea and nmea.is_gprmc?
-      gps = nmea.parse_gprmc
-      break if gps and gps.valid?
+    on.message do |channel, message|
+      puts "##{channel}: #{message}"
+    end
+
+    on.unsubscribe do |channel, subscriptions|
+      puts "Unsubscribed from ##{channel} (#{subscriptions} subscriptions)"
     end
   end
-  puts "Time is #{gps.time.to_s}"
-  %x{date #{gps.time.strftime('%Y%m%d%H%M.%S')}}
+rescue Redis::BaseConnectionError => error
+  puts "#{error}, retrying in 1s"
+  sleep 1
+  retry
 end
 exit 0

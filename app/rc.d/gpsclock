@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+
+# PROVIDE: gpsclock
+# REQUIRE: FILESYSTEMS ldconfig
+# KEYWORD: nojail
+
+. /etc/rc.subr
+
+name="gpsclock"
+desc="Set system clock based on GPS data"
+start_cmd="gpsclock_start"
+stop_cmd=":"
+
+gpsclock_start()
+{
+
+	echo -n 'Setting time from GPS: '
+	timeout 10 /app/bin/gps_time.rb ${gps_time_flags}
+}
+
+load_rc_config $name
+run_rc_command "$1"

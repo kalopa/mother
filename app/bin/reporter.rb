@@ -26,38 +26,20 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # ABSTRACT
-# This utility function will read from the GPS device one time, and set
-# the system clock accordingly. It is used on the PC Engines WRAP, ALIX
-# and APU boards because they don't have a real-time clock. It is called
-# once during system boot, to attempt to read GPS data, parse it, extract
-# the time, and set the system time. It gives up after thirty seconds.
+# This daemon runs periodically to send status reports and alerts back to
+# mission control. Status reports are sent every six hours, and alerts
+# are sent as they happen. It understands the weird interface of the
+# RockBlock and sends compressed log data back to mission control.
 #
-require 'timeout'
 require 'serialport'
 require 'sgslib'
 
-device = "/dev/ttyU0"
-speed = 9600
+config = SGS::Config.load
 
-if ARGV.count > 0
-  device = ARGV[0]
-  if ARGV.count > 1
-    speed = ARGV[1].to_i
-  end
-end
+sp = SerialPort.new config.comm_device, config.comm_speed
+sp.read_timeout = 10000
 
-serial = SerialPort.new device, serial
-
-gps = nil
-status = Timeout::timeout(30) do
-  while true do
-    nmea = SGS::NMEA.parse(serial.readline)
-    if nmea and nmea.is_gprmc?
-      gps = nmea.parse_gprmc
-      break if gps and gps.valid?
-    end
-  end
-  puts "Time is #{gps.time.to_s}"
-  %x{date #{gps.time.strftime('%Y%m%d%H%M.%S')}}
+loop do
+  sleep 300
 end
 exit 0

@@ -26,38 +26,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # ABSTRACT
-# This utility function will read from the GPS device one time, and set
-# the system clock accordingly. It is used on the PC Engines WRAP, ALIX
-# and APU boards because they don't have a real-time clock. It is called
-# once during system boot, to attempt to read GPS data, parse it, extract
-# the time, and set the system time. It gives up after thirty seconds.
+# This is the main navigator function. It listens for GPS messages
+# and computes the mission details from the current boat position. It
+# understands the various boat-state functions so that it won't try to
+# steer the boat if it is in a passive state.
 #
-require 'timeout'
-require 'serialport'
 require 'sgslib'
 
-device = "/dev/ttyU0"
-speed = 9600
-
-if ARGV.count > 0
-  device = ARGV[0]
-  if ARGV.count > 1
-    speed = ARGV[1].to_i
-  end
-end
-
-serial = SerialPort.new device, serial
-
-gps = nil
-status = Timeout::timeout(30) do
-  while true do
-    nmea = SGS::NMEA.parse(serial.readline)
-    if nmea and nmea.is_gprmc?
-      gps = nmea.parse_gprmc
-      break if gps and gps.valid?
-    end
-  end
-  puts "Time is #{gps.time.to_s}"
-  %x{date #{gps.time.strftime('%Y%m%d%H%M.%S')}}
+loop do
+  sleep 300
 end
 exit 0

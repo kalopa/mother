@@ -1,4 +1,4 @@
-#!/usr/local/bin/ruby
+#!/bin/sh
 #
 # Copyright (c) 2014, Kalopa Research.  All rights reserved.  This is free
 # software; you can redistribute it and/or modify it under the terms of the
@@ -26,38 +26,34 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # ABSTRACT
-# This utility function will read from the GPS device one time, and set
-# the system clock accordingly. It is used on the PC Engines WRAP, ALIX
-# and APU boards because they don't have a real-time clock. It is called
-# once during system boot, to attempt to read GPS data, parse it, extract
-# the time, and set the system time. It gives up after thirty seconds.
+# Run this script when you first install the SGS software to make sure all
+# of the various bits and pieces are properly installed and configured.
 #
-require 'timeout'
-require 'serialport'
-require 'sgslib'
 
-device = "/dev/ttyU0"
-speed = 9600
+# Mount the root and config partitions in case we need them.
+mount -w /
+mount -w /cfg
 
-if ARGV.count > 0
-  device = ARGV[0]
-  if ARGV.count > 1
-    speed = ARGV[1].to_i
-  end
-end
+# Install whatever Ruby gems we need.
+gem install daemons -v 1.2.6
+gem install god -v 0.13.7
+gem install serialport -v 1.3.1
+gem install redis -v 3.3.5
+gem install mini_portile2 -v 2.3.0
+gem install nokogiri -v 1.8.3
+gem install msgpack -v 1.2.4
+gem install sgslib
 
-serial = SerialPort.new device, serial
+# Make sure Redis is running properly.
+mkdir -p /app/redis
+chown redis:redis /app/redis
+/etc/local/rc.d/redis restart
+redis-cli -i 1 info | grep -e ^redis -e uptime
 
-gps = nil
-status = Timeout::timeout(30) do
-  while true do
-    nmea = SGS::NMEA.parse(serial.readline)
-    if nmea and nmea.is_gprmc?
-      gps = nmea.parse_gprmc
-      break if gps and gps.valid?
-    end
-  end
-  puts "Time is #{gps.time.to_s}"
-  %x{date #{gps.time.strftime('%Y%m%d%H%M.%S')}}
-end
+# Install the god-particles.
+cp /app/mother/god.conf /etc
+cp /app/mother/god.conf /cfg
+/app/rc.d/god restart
+god status
+
 exit 0

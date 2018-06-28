@@ -26,38 +26,23 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # ABSTRACT
-# This utility function will read from the GPS device one time, and set
-# the system clock accordingly. It is used on the PC Engines WRAP, ALIX
-# and APU boards because they don't have a real-time clock. It is called
-# once during system boot, to attempt to read GPS data, parse it, extract
-# the time, and set the system time. It gives up after thirty seconds.
+# This daemon is responsible for reading from the GPS unit and posting
+# the data to the Redis database, and also sending a GPS message to any
+# and all interested parties.
 #
-require 'timeout'
 require 'serialport'
 require 'sgslib'
 
-device = "/dev/ttyU0"
-speed = 9600
+config = SGS::Config.load
 
-if ARGV.count > 0
-  device = ARGV[0]
-  if ARGV.count > 1
-    speed = ARGV[1].to_i
+sp = SerialPort.new config.gps_device, config.gps_speed
+sp.read_timeout = 10000
+
+loop do
+  nmea = SGS::NMEA.parse sp.readline
+  if nmea.is_gprmc?
+    gps = nmea.parse_gprmc
+    gps.save_and_publish if gps and gps.valid?
   end
-end
-
-serial = SerialPort.new device, serial
-
-gps = nil
-status = Timeout::timeout(30) do
-  while true do
-    nmea = SGS::NMEA.parse(serial.readline)
-    if nmea and nmea.is_gprmc?
-      gps = nmea.parse_gprmc
-      break if gps and gps.valid?
-    end
-  end
-  puts "Time is #{gps.time.to_s}"
-  %x{date #{gps.time.strftime('%Y%m%d%H%M.%S')}}
 end
 exit 0
